@@ -34,17 +34,25 @@ class Process:
 
 class RoundRobin:
     def __init__(self, quantum=15):
+        """
+        The constructor for the Round Robin scheduler
+        :param quantum:
+        The time quantum for the timer interrupt
+        """
         self.quantum = quantum
 
     def switch_process(self, clock_time):
         """
-        checks to see if it is time to switch process
+        This computes the time to fire the timer interrupt
         :param clock_time:
+        the current clock tum
         :return:
         True if it's time to switch processes
         False otherwise
         """
         if clock_time != 0 and (clock_time % self.quantum == 0):
+            # this will not fire at t=0 which could complicate
+            #   running the first process
             return True
         return False
 
@@ -59,7 +67,7 @@ class CPU:
     """
     def __init__(self, cs, clock_time):
         """
-        Inits the CPU
+        Constructor for the CPU class
         :param cs:
         This is how long a context switch will take
         :param clock_time:
@@ -74,12 +82,20 @@ class CPU:
         self.first_process = True
 
         # these values are used during a context switch
+        # the time of the initial context switch call
         self.cs_start_time = None
         # flag for cpu state
         # "free", "running", "cs"
+        #   free: the CPU has no active process
+        #       and will accept a new one
+        #   running: the CPU has an active process
+        #       but will still respond to interrupts
+        #   cs: the CPU is mid context switch and
+        #       won't respond to interrupts
         self.status = "free"
+
         # this holds the previous process after a context
-        # switch so that it may be retrieved
+        #   switch so that it may be retrieved
         self.old_process = None
 
     def set_clock(self, clock_time):
@@ -90,6 +106,7 @@ class CPU:
         the current clock time
         """
         self.clock_time = clock_time
+
         # set CPU to running if a context switch has been completed
         if self.status == "cs" and self.clock_time >= (self.cs + self.cs_start_time):
             self.status = "running"
@@ -103,11 +120,17 @@ class CPU:
         """
         if self.status == "running":
             self.active_process.execute()
+
             state = self.active_process.get_state()
+            # if the process is done...
             if state == "terminated":
+                # store the old process for bookkeeping
                 old_process = self.active_process
+                # set the CPU status to "free"
                 self.status = "free"
+                # remove the active process
                 self.active_process = None
+                # return the old process's id
                 return old_process.id
             else:
                 return None
@@ -128,10 +151,10 @@ class CPU:
             # unset first process flag
             self.first_process = False
         elif self.status != "cs":
-            # if not currently performing context switch
+            # only start if not currently performing context switch
             # set status to cs
             self.status = "cs"
-            # store the current clock time
+            # set the cs start time as the current time
             self.cs_start_time = self.clock_time
             # store the old process
             self.old_process = self.active_process
@@ -140,15 +163,14 @@ class CPU:
 
     def retrieve_previous_process(self):
         """
-        Retrieve the old process after a context switch
+        Used to retrieve the old process after a context switch
         if one has been performed and the process is now
         available
         :return:
         The old process if available
-        None otherwise
+        Return None otherwise
         """
         if self.status == "running" and self.old_process:
-            # if there's
             previous_process = self.old_process
             self.old_process = None
             return previous_process
@@ -172,7 +194,7 @@ class ProcessManager:
         Feed clock time in, and if it matches a process
         arrival time, feed it into the ready queue
         :param clock_time:
-        the current clock time
+        The current clock time
         """
         results = []
         for process in self.processes:
