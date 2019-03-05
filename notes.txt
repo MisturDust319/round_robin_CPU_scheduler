@@ -1,0 +1,21 @@
+# NOTES
+
+## Results
+For each process:
+- Start Time
+    clock time when the process enters the ready queue
+- End Time
+    clock time when the process finishes execution
+- Interarrival Time
+    current process start time - prev proc start time
+- Initial Wait
+    time in wait queue before first execution cycle
+- Total Wait
+    total wait time
+- Turnaround Time
+    time in running state
+
+For test:
+- Average turnaround time
+- Average service time
+    time to finish processes/num processes
