@@ -8,6 +8,17 @@ class Log:
     class Entry:
 
         def __init__(self, pid, clock_time, last_entry=None):
+            """
+            Constructor for Log's embedded class, Entry
+            This class stores data for individual processes
+            :param pid:
+            The process id and identifier for the log entry
+            :param clock_time:
+            The process' arrival time
+            :param last_entry:
+            Holds the previous entry of the log
+            This stores the entries as a linked list
+            """
             # the id of the process this entry tracks data for
             self.pid = pid
             # the start time is the initial clock time
@@ -42,6 +53,7 @@ class Log:
             # Calculate turnaround time
             self.turnaround_time = self.end_time - self.start_time
 
+            # print individual output
             print("# Process Num: " + str(self.pid))
             print("# Start Time: " + str(self.start_time) + " End Time: " + str(self.end_time))
             print("# Interarrival Time: " + str(self.interarrival_time))
@@ -50,11 +62,10 @@ class Log:
             print("########################################################################")
     def __init__(self):
         """
+        Constructor for Log
         Log will log data for you
-        :param starting_entry:
-        Because data is stored as a linked list
-        you must provide a starting value
         """
+        # init Log with 0 entries
         self.entries = None
         self.number_of_entries = 0
 
@@ -84,6 +95,8 @@ class Log:
         :param callback:
         the callback function to use to modify entry
         :return:
+        True if able to call the callback
+        False otherwise
         """
         def recursive_search(entry, entry_number, value, callback):
             if(entry and entry.pid == entry_number):
@@ -131,6 +144,13 @@ class Log:
         return self.modify_entry(entry_number, None, increment_wait)
 
     def set_end_time(self, entry_number, value):
+        """
+        Sets the end time of an entry
+        :param entry_number:
+        The id of the entry to modify
+        :param value:
+        The end time of the process
+        """
         def mod_end_time(entry, value):
             entry.end_time = value
         self.modify_entry(entry_number, value, mod_end_time)
@@ -150,6 +170,7 @@ class Log:
         """
         Prints the data stored in the log
         """
+        # create a nice little heading
         print("########################################################################")
         # PRINT INDIVIDUAL LOG ENTRY DATA
         self.entries.printData()
