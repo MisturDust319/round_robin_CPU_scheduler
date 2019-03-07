@@ -36,6 +36,21 @@ Further, if the CPU is executing a context switch,
 the timer interrupt will not start a new context switch or queue
 up more processes. It will continue with the current context switch
 uninterrupted.
+
+Except for the first process, all processes loaded into the CPU
+requrie a full context switch. The first process is given a manual
+override because it allows the first computation to begin ASAP.
+
+Lastly, this problem is solved by implementing a model CPU being
+driven by a clock, not with pure mathematical calculations. As such,
+there are limits what someone like me who have never designed a CPU
+before. One common problem is slightly off time calcuations. This is
+due how the CPU updates its status. As implemented, there is a slight
+delay in this update after certain tasks. The CPU needs to wait for
+the next CPU 'tick' to actually reset its status, which throws off some
+calculations. Otherwise, the calculations are very close to the ideal
+computations.
+
 """
 from collections import deque
 from cpu_tools import *
@@ -58,7 +73,6 @@ PROCESSES = [Process(1, 75, 0),
              Process(3, 25, 10),
              Process(4, 20, 80),
              Process(5, 45, 85)]
-
 
 def main():
     """
@@ -103,9 +117,17 @@ def main():
         # 2. GIVE CPU NEW CLOCK TIME
         cpu.set_clock(clock_time)
 
-        # 3. CLEAR ON_DECK IF PROCESSOR IS RUNNING
+        # 3. BOOKKEEPING PT 1
+        # 3.1 CLEAR ON_DECK IF PROCESSOR IS RUNNING
         if cpu.status == "running":
             on_deck = None
+        # 3.2 INCREMENT READY QUEUE WAIT TIMES
+        for process in ready_queue:
+            log.increment_wait_time(process.id)
+        # 3.3 INCREMENT ON DECK WAIT TIMES
+        if (on_deck):
+            log.increment_wait_time(on_deck.id)
+
         # 4. CHECK IF A CONTEXT SWITCH IS APPROPRIATE
         # 4.1 IF THIS IS THE FIRST PROCESS AND A FULL CS
         #   ISN'T NEEDED
@@ -155,25 +177,18 @@ def main():
                     # otherwise, mark the CPU as free
                     cpu.status = "free"
 
-
         # 6. RECOVER PROCESS FROM CPU AFTER CONTEXT SWITCH
         old_process = cpu.retrieve_previous_process()
         if old_process:
             ready_queue.appendleft(old_process)
 
-        # 7. BOOKKEEPING
-        # 7.1 INCREMENT READY QUEUE WAIT TIMES
-        for process in ready_queue:
-            log.increment_wait_time(process.id)
-        # 7.2 INCREMENT ON DECK WAIT TIMES
-        if(on_deck):
-            log.increment_wait_time(on_deck.id)
-        # 7.3 SIGNAL END OF DRIVER IF APPROPRIATE
-        if not ready_queue and not PROCESSES and cpu.status == "free":
+        # 7. BOOKKEEPING PT 2
+        # 7.1 SIGNAL END OF DRIVER IF APPROPRIATE
+        if not ready_queue and not PROCESSES and cpu.status == "free" and not cpu.old_process:
             keep_processing = False
             # note the final clock time in the log
             log.final_complete_time = clock_time
-        # 7.4 INCREMENT CLOCKTIME
+        # 7.2 INCREMENT CLOCKTIME
         clock_time += 1
 
     # print results

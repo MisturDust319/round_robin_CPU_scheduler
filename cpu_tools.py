@@ -170,7 +170,7 @@ class CPU:
         The old process if available
         Return None otherwise
         """
-        if self.status == "running" and self.old_process:
+        if self.old_process:
             previous_process = self.old_process
             self.old_process = None
             return previous_process
